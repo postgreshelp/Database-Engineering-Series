@@ -72,7 +72,7 @@ This series maps that gap, episode by episode, responsibility by responsibility.
 | Ep 12 | Crash recovery WAL deletion | Hours of startup time nobody warned you about |
 | Ep 13 | CREATE TABLE AS SELECT vs INSERT INTO SELECT | Different locks, different planner behavior, different production outcomes |
 | Ep 14 | Heap truncation after VACUUM | What it breaks that the docs don't mention |
-| Ep 15+ | More from 14 years of production | *Stay tuned* |
+| Ep 15+ | More from 6+ years of production | *Stay tuned* |
 
 ---
 
@@ -124,31 +124,6 @@ postgresql-dbre-ai-series/
     ├── checkov/
     └── tfsec/
 ```
-
----
-
-## The GitLab Lesson (Why Ep 04 Matters)
-
-January 31, 2017. A GitLab engineer ran one command on the wrong server
-and wiped 300GB of production PostgreSQL data. They had 5 backup systems.
-Not one worked. It took 18 hours and cost them 6 hours of user data — permanently.
-
-The on-call engineer faced this decision at 9 PM:
-
-> *Replication lag is spiking. Wait it out — or rebuild the secondary now?*
-
-Ask AI that question. It gives a structured, reasonable answer.
-But it doesn't know the pg_dump backups had been silently failing for months.
-It doesn't know that if the secondary gets wiped, there is no fallback.
-
-**AI answers the question it was asked.**
-**The DBRE answers the question behind the question.**
-
-Episode 4 builds the HA stack that prevents this incident.
-The GitLab incident postmortem is required reading:
-[https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/](https://about.gitlab.com/blog/postmortem-of-database-outage-of-january-31/)
-
----
 
 ## Who Is This For?
 
