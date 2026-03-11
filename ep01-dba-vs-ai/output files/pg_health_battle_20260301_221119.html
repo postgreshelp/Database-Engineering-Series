@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PostgreSQL Health — AI Battle Report</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Courier New",Courier,monospace;font-size:13px;color:#1a1a1a;background:#fff;padding:20px 30px;max-width:1600px;margin:0 auto}
+.header{border:2px solid #333;padding:14px 20px;margin-bottom:20px;background:#f5f5f5;text-align:center}
+.header h1{font-size:16px;letter-spacing:1px;margin-bottom:4px}
+.header .sub{font-size:12px;color:#666}
+.score-grid{display:flex;gap:0;margin-bottom:20px;border:2px solid #333}
+.score-col{padding:14px 16px;flex:1}
+.score-col h2{font-size:13px;margin-bottom:8px;text-align:center}
+.score-col.arrow{flex:0 0 40px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;font-size:18px;color:#888}
+.metric{display:flex;justify-content:space-between;padding:2px 0;font-size:12px}
+.metric .lbl{color:#666}.metric .val{font-weight:bold}
+.rating-box{text-align:center;padding:5px;margin:5px 0;font-weight:bold;font-size:13px;border:1px solid}
+.rating-critical{background:#ffcccc;border-color:#cc0000;color:#cc0000}
+.rating-poor{background:#ffe0cc;border-color:#cc6600;color:#cc6600}
+.rating-fair{background:#ffffcc;border-color:#999900;color:#999900}
+.rating-good{background:#ccffcc;border-color:#006600;color:#006600}
+.rating-unknown{background:#eee;border-color:#999;color:#999}
+.banner{border:2px solid #333;padding:12px 20px;margin-bottom:20px}
+.banner h2{font-size:14px;text-align:center;margin-bottom:10px}
+.banner-row{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.banner-stat{text-align:center;padding:8px 16px;border:1px solid #ddd;min-width:140px}
+.banner-stat .num{font-size:24px;font-weight:bold}
+.banner-stat .lbl{font-size:10px;color:#666}
+table.main{width:100%;border-collapse:collapse;margin-bottom:8px;font-size:11px}
+table.main th{background:#333;color:#fff;padding:4px 6px;text-align:left;font-weight:bold;border:1px solid #333;white-space:nowrap}
+table.main td{border:1px solid #bbb;padding:3px 6px;vertical-align:top}
+table.main tr:nth-child(even){background:#f8f8f8}
+table.main tr:hover{background:#ffffee}
+.cell-issue{background:#fff3cd;color:#664d00}
+.cell-warn{background:#fff8ee;color:#663300}
+.cell-pass{background:#d4edda;color:#1a4d1a}
+.badge{display:inline-block;padding:1px 5px;font-size:9px;font-weight:bold;font-family:"Courier New",monospace}
+.b-win{background:#006600;border:1px solid #004400;color:#fff}
+.b-tie{background:#fff3cd;border:1px solid #cc9900;color:#664d00}
+.b-worse{background:#ffcccc;border:1px solid #cc0000;color:#660000}
+.b-best{background:#006600;border:1px solid #004400;color:#fff;font-size:11px;padding:2px 8px}
+.section-card{border:1px solid #bbb;margin-bottom:8px}
+.section-card-hdr{padding:5px 10px;cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;background:#e8e8e8}
+.section-card-hdr:hover{background:#ddd}
+.section-detail{display:none;border-top:1px solid #ccc}
+.section-detail.open{display:block}
+.detail-grid{display:flex}
+.detail-col{flex:1;padding:8px 10px;font-size:11px;border-right:1px solid #eee}
+.detail-col:last-child{border-right:none}
+.detail-col h4{font-size:10px;color:#666;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.finding{margin:3px 0;padding:2px 5px;font-size:11px}
+.f-issue{background:#fff3cd;border-left:3px solid #cc9900}
+.f-warn{background:#fff8ee;border-left:3px solid #cc6600}
+.f-pass{background:#eaf7ec;border-left:3px solid #339933}
+.dba-note{background:#f0f4ff;border-left:4px solid #3366cc;padding:6px 10px;font-size:11px;margin:0}
+.dba-note b{color:#3366cc}
+.toggle-arrow{font-size:12px;margin-right:5px;transition:transform .2s;display:inline-block}
+.toggle-arrow.open{transform:rotate(90deg)}
+.verdict{border:2px solid #333;padding:16px 20px;margin:20px 0}
+.verdict h2{font-size:14px;margin-bottom:10px}
+.verdict h3{font-size:13px;margin:10px 0 5px 0;border-bottom:1px solid #ddd;padding-bottom:3px}
+.verdict p,.verdict li{font-size:12px;line-height:1.5;margin:3px 0}
+.verdict ul{margin-left:16px}
+.controls{margin-bottom:10px;text-align:right}
+.controls button{font-family:"Courier New",monospace;font-size:11px;padding:3px 10px;cursor:pointer;border:1px solid #999;background:#f0f0f0;margin-left:4px}
+.controls button:hover{background:#e0e0e0}
+.footer{margin-top:30px;padding-top:8px;border-top:2px solid #333;font-size:11px;color:#666;text-align:center}
+@media print{.section-detail{display:block!important}.toggle-arrow{display:none}body{font-size:10px;padding:10px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>POSTGRESQL HEALTH CHECK — AI BATTLE REPORT</h1>
+  <div class="sub">Gemini (Basic) vs Claude (Basic) vs Claude (Detailed) | Sunday 01 March 2026 10:11:20 PM IST</div>
+</div>
+<div class="score-grid">
+<div class="score-col" style="background:#fff5f5">
+  <h2>🔴 Planted</h2>
+  <div class="rating-box rating-critical">CRITICAL</div>
+  <div class="metric"><span class="lbl">Issues:</span><span class="val" style="color:#cc0000">21</span></div>
+  <div class="metric"><span class="lbl">Warnings:</span><span class="val" style="color:#cc6600">12</span></div>
+  <div class="metric"><span class="lbl">Passed:</span><span class="val" style="color:#006600">8</span></div>
+</div>
+<div class="score-col arrow">→</div>
+<div class="score-col" style="background:#f0f0ff">
+  <h2>🔵 Gemini (Basic)</h2>
+  <div class="rating-box rating-poor">POOR</div>
+  <div class="metric"><span class="lbl">Issues:</span><span class="val" style="color:#cc0000">9</span></div>
+  <div class="metric"><span class="lbl">Warnings:</span><span class="val" style="color:#cc6600">8</span></div>
+  <div class="metric"><span class="lbl">Passed:</span><span class="val" style="color:#006600">22</span></div>
+</div>
+<div class="score-col arrow">→</div>
+<div class="score-col" style="background:#fff8f0">
+  <h2>🟠 Claude (Basic)</h2>
+  <div class="rating-box rating-critical">CRITICAL</div>
+  <div class="metric"><span class="lbl">Issues:</span><span class="val" style="color:#cc0000">16</span></div>
+  <div class="metric"><span class="lbl">Warnings:</span><span class="val" style="color:#cc6600">9</span></div>
+  <div class="metric"><span class="lbl">Passed:</span><span class="val" style="color:#006600">15</span></div>
+</div>
+<div class="score-col arrow">→</div>
+<div class="score-col" style="background:#f8f0ff">
+  <h2>🟣 Claude (Detailed)</h2>
+  <div class="rating-box rating-fair">FAIR</div>
+  <div class="metric"><span class="lbl">Issues:</span><span class="val" style="color:#cc0000">4</span></div>
+  <div class="metric"><span class="lbl">Warnings:</span><span class="val" style="color:#cc6600">9</span></div>
+  <div class="metric"><span class="lbl">Passed:</span><span class="val" style="color:#006600">26</span></div>
+</div>
+</div>
+<div class="banner"><h2>ISSUES FIXED</h2><div class="banner-row">
+<div class="banner-stat">
+  <div class="num" style="color:#4285f4">12 fixed</div>
+  <div class="lbl">Gemini (Basic): 21 → 9 (57% reduction)</div>
+</div>
+<div class="banner-stat">
+  <div class="num" style="color:#d97706">5 fixed</div>
+  <div class="lbl">Claude (Basic): 21 → 16 (23% reduction)</div>
+</div>
+<div class="banner-stat">
+  <div class="num" style="color:#7c3aed">17 fixed</div>
+  <div class="lbl">Claude (Detailed): 21 → 4 (80% reduction)</div>
+</div>
+</div></div>
+<div class="controls">
+  <button onclick="toggleAll(true)">▼ Expand All</button>
+  <button onclick="toggleAll(false)">▲ Collapse All</button>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>1. Table Bloat & Autovacuum</b> &nbsp; <span style='color:#cc3333'>❌2</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>❌2</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-win'>🔵 Gemini (Basic)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ Dead tuple accumulation: </div><div class='finding f-issue'>❌ Autovacuum </div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ Dead tuple count acceptable (2209)</div><div class='finding f-pass'>✅ Autovacuum enabled on all tables</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ Dead tuple accumulation: </div><div class='finding f-issue'>❌ Autovacuum </div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ Dead tuple count acceptable (2)</div><div class='finding f-pass'>✅ Autovacuum enabled on all tables</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Autovacuum re-enable requires per-table ALTER. AI may fear overriding intentional tuning. Dead tuples need VACUUM; physical space needs VACUUM FULL.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>2. Index Bloat</b> &nbsp; <span style='color:#cc3333'>✅</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-pass'>No findings</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>No findings</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>No findings</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>No findings</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>3. Invalid Indexes</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 1 invalid index(es) found — not used by queries</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ No invalid indexes</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ No invalid indexes</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No invalid indexes</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#fff3cd" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>4. Unused Indexes</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>❌1</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>❌1</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 15 unused non-unique indexes — wasting disk &amp; slowing writes</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 17 unused non-unique indexes — wasting disk &amp; slowing writes</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 19 unused non-unique indexes — wasting disk &amp; slowing writes</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-issue'>❌ 8 unused non-unique indexes — wasting disk &amp; slowing writes</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Unused indexes: AI hesitates because idx_scan=0 might mean a monthly job hasnt run. Production practice: monitor 30+ days before dropping.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>5. Duplicate / Overlapping Indexes</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>⚠️1</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-win'>🔵 Gemini (Basic)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 2 exact duplicate index pair(s)</div><div class='finding f-warn'>⚠️ 2 overlapping index pair(s)</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ No duplicate indexes</div><div class='finding f-pass'>✅ No overlapping indexes</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-warn'>⚠️ 2 overlapping index pair(s)</div><div class='finding f-pass'>✅ No duplicate indexes</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No duplicate indexes</div><div class='finding f-pass'>✅ No overlapping indexes</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>6. Missing FK Indexes</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-win'>🔵 Gemini (Basic)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 7 foreign key(s) without indexes</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ All foreign keys have indexes</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 3 foreign key(s) without indexes</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ All foreign keys have indexes</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> FK indexes: Some AIs skip small tables where seq scan is faster. But index is needed for DELETE cascades on parent.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>7. Wraparound Risk</b> &nbsp; <span style='color:#cc3333'>✅</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-pass'>✅ XID age acceptable (155)</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ XID age acceptable (438)</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ XID age acceptable (246)</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ XID age acceptable (218)</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>8. Stale Statistics</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 2 table(s) with stale statistics (&gt;5000 modifications since ANALYZE)</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ Statistics up to date</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ Statistics up to date</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ Statistics up to date</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>9. Long-Running Queries</b> &nbsp; <span style='color:#cc3333'>✅</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-pass'>✅ No long-running queries</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ No long-running queries</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ No long-running queries</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No long-running queries</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>10. Idle-in-Transaction Sessions</b> &nbsp; <span style='color:#cc3333'>✅</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-pass'>✅ No idle-in-transaction sessions</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ No idle-in-transaction sessions</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ No idle-in-transaction sessions</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No idle-in-transaction sessions</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>11. Orphaned Prepared Transactions</b> &nbsp; <span style='color:#cc3333'>✅</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-pass'>✅ No orphaned prepared transactions</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ No orphaned prepared transactions</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ No orphaned prepared transactions</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No orphaned prepared transactions</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>12. Replication Slots</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>❌1</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-win'>🟣 Claude (Detailed)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 3 inactive replication slot(s) — WAL accumulating!</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 3 inactive replication slot(s) — WAL accumulating!</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 3 inactive replication slot(s) — WAL accumulating!</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No stale replication slots</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Replication slots: Irreversible drop. If standby is temporarily down, dropping forces full pg_basebackup rebuild. AI wont drop without explicit confirmation.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>13. Sequence Exhaustion</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 4 sequence(s) at &gt;75% capacity</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ All sequences have sufficient headroom</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ All sequences have sufficient headroom</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ All sequences have sufficient headroom</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#fff3cd" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>14. Tables Without Primary Keys</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>❌1</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>❌1</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 12 table(s) without primary key</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 2 table(s) without primary key</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 12 table(s) without primary key</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-issue'>❌ 34 table(s) without primary key</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Adding PK requires choosing the right column (design decision). Also needs ACCESS EXCLUSIVE lock and uniqueness scan on full table.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>15. Unlogged Tables</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-win'>🔵 Gemini (Basic)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 2 UNLOGGED table(s) — </div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ No unlogged tables</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 2 UNLOGGED table(s) — </div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No unlogged tables</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> ALTER TABLE SET LOGGED rewrites entire table + generates WAL for all rows. Blocking DDL, risky on large tables.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#fff3cd" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>16. Configuration Settings</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>❌1</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>❌1</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 15 suboptimal setting(s)</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 2 suboptimal setting(s)</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 15 suboptimal setting(s)</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-issue'>❌ 3 suboptimal setting(s)</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Many settings need PostgreSQL restart (shared_buffers, max_connections). AI only has ALTER SYSTEM + pg_reload_conf, which doesnt apply restart-only params.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>17. Security & Grants</b> &nbsp; <span style='color:#cc3333'>❌2</span> <span style='color:#4285f4'>❌1</span> <span style='color:#d97706'>❌2</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-win'>🟣 Claude (Detailed)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 119 table grant(s) to PUBLIC</div><div class='finding f-issue'>❌ 2 SECURITY DEFINER function(s) in public schema</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 2 SECURITY DEFINER function(s) in public schema</div><div class='finding f-pass'>✅ No PUBLIC grants on tables</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 119 table grant(s) to PUBLIC</div><div class='finding f-issue'>❌ 2 SECURITY DEFINER function(s) in public schema</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No PUBLIC grants on tables</div><div class='finding f-pass'>✅ No SECURITY DEFINER functions in public</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> REVOKE from PUBLIC can break every application. SECURITY DEFINER drop can cascade. AI needs app context to fix safely.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>18. Lock Contention & Advisory Locks</b> &nbsp; <span style='color:#cc3333'>⚠️1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-warn'>⚠️ 3 advisory lock(s) held</div><div class='finding f-pass'>✅ No lock contention</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ No lock contention</div><div class='finding f-pass'>✅ No advisory locks</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ No lock contention</div><div class='finding f-pass'>✅ No advisory locks</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ No lock contention</div><div class='finding f-pass'>✅ No advisory locks</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>19. Data Integrity</b> &nbsp; <span style='color:#cc3333'>❌2</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>❌1</span> </span>
+    <span><span class='badge b-win'>🔵 Gemini (Basic)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 5 NOT VALID constraint(s) — existing bad data not checked</div><div class='finding f-issue'>❌ 3 order(s) with NULL customer_id or total_amount</div><div class='finding f-warn'>⚠️ 2492 feedback row(s) with negative ratings</div><div class='finding f-pass'>✅ No duplicate emails</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ All constraints validated</div><div class='finding f-pass'>✅ No duplicate emails</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 3 order(s) with NULL customer_id or total_amount</div><div class='finding f-pass'>✅ All constraints validated</div><div class='finding f-pass'>✅ No duplicate emails</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-issue'>❌ 3 order(s) with NULL customer_id or total_amount</div><div class='finding f-warn'>⚠️ 2504 feedback row(s) with negative ratings</div><div class='finding f-pass'>✅ All constraints validated</div><div class='finding f-pass'>✅ No duplicate emails</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> VALIDATE CONSTRAINT fails if ANY bad row exists. Must clean data first. NULL fixes need business context (is NULL=0 or NULL=unknown?).</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>20. Partitioning Health</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>❌1</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>⚠️1</span> </span>
+    <span><span class='badge b-win'>🟣 Claude (Detailed)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 3649 rows in DEFAULT partition — missing partition definitions</div><div class='finding f-warn'>⚠️ 1 empty partition(s)</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 3649 rows in DEFAULT partition — missing partition definitions</div><div class='finding f-warn'>⚠️ 1 empty partition(s)</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 3649 rows in DEFAULT partition — missing partition definitions</div><div class='finding f-warn'>⚠️ 1 empty partition(s)</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-warn'>⚠️ 23 empty partition(s)</div><div class='finding f-pass'>✅ Partitioning healthy</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Partition management: Multi-step (create partition, detach default, move rows, reattach). Complex and error-prone. Needs partitioning scheme knowledge.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>21. Trigger Issues</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>⚠️1</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>⚠️1</span> </span>
+    <span><span class='badge b-win'>🔵 Gemini (Basic)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 1 disabled trigger(s)</div><div class='finding f-warn'>⚠️ 1 function(s) silently swallowing errors</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-warn'>⚠️ 1 function(s) silently swallowing errors</div><div class='finding f-pass'>✅ All triggers enabled</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 1 disabled trigger(s)</div><div class='finding f-warn'>⚠️ 1 function(s) silently swallowing errors</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-warn'>⚠️ 1 function(s) silently swallowing errors</div><div class='finding f-pass'>✅ All triggers enabled</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Disabled triggers exist for a reason (bulk load, debugging). Re-enabling without context can cause cascade failures.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>22. Role Escalation & Privileges</b> &nbsp; <span style='color:#cc3333'>❌2</span> <span style='color:#4285f4'>❌2</span> <span style='color:#d97706'>❌2</span> <span style='color:#7c3aed'>⚠️1</span> </span>
+    <span><span class='badge b-win'>🟣 Claude (Detailed)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 1 non-superuser role(s) with CREATEROLE/CREATEDB</div><div class='finding f-issue'>❌ search_path: public before pg_catalog — function shadowing risk</div><div class='finding f-warn'>⚠️ Complex role membership (6 grants) — check for escalation chains</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 1 non-superuser role(s) with CREATEROLE/CREATEDB</div><div class='finding f-issue'>❌ search_path: public before pg_catalog — function shadowing risk</div><div class='finding f-warn'>⚠️ Complex role membership (6 grants) — check for escalation chains</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 1 non-superuser role(s) with CREATEROLE/CREATEDB</div><div class='finding f-issue'>❌ search_path: public before pg_catalog — function shadowing risk</div><div class='finding f-warn'>⚠️ Complex role membership (6 grants) — check for escalation chains</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-warn'>⚠️ Complex role membership (6 grants) — check for escalation chains</div><div class='finding f-pass'>✅ search_path safe</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Revoking roles locks out users immediately. search_path change affects all sessions. Needs coordination.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#f8f8f8" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>23. Foreign Data Wrappers</b> &nbsp; <span style='color:#cc3333'>❌1</span> <span style='color:#4285f4'>❌1</span> <span style='color:#d97706'>❌1</span> <span style='color:#7c3aed'>⚠️1</span> </span>
+    <span><span class='badge b-win'>🟣 Claude (Detailed)</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-issue'>❌ 1 FDW user mapping(s) with hardcoded passwords!</div><div class='finding f-warn'>⚠️ 1 foreign server(s) configured</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-issue'>❌ 1 FDW user mapping(s) with hardcoded passwords!</div><div class='finding f-warn'>⚠️ 1 foreign server(s) configured</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-issue'>❌ 1 FDW user mapping(s) with hardcoded passwords!</div><div class='finding f-warn'>⚠️ 1 foreign server(s) configured</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-warn'>⚠️ 1 foreign server(s) configured</div></div></div>
+    <div class='dba-note'><b>🔍 DBA Analysis:</b> Dropping FDW user mapping breaks foreign table queries. Remote server might be temporarily down.</div>
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>24. Materialized Views & pg_stat_statements</b> &nbsp; <span style='color:#cc3333'>⚠️1</span> <span style='color:#4285f4'>⚠️1</span> <span style='color:#d97706'>⚠️1</span> <span style='color:#7c3aed'>⚠️1</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-warn'>⚠️ 1 materialized view(s) — verify refresh schedule</div><div class='finding f-pass'>✅ pg_stat_statements: 0 entries</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-warn'>⚠️ 1 materialized view(s) — verify refresh schedule</div><div class='finding f-pass'>✅ pg_stat_statements: 0 entries</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-warn'>⚠️ 1 materialized view(s) — verify refresh schedule</div><div class='finding f-pass'>✅ pg_stat_statements: 0 entries</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-warn'>⚠️ 1 materialized view(s) — verify refresh schedule</div><div class='finding f-pass'>✅ pg_stat_statements: 0 entries</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>25. Connection Pressure & WAL Archiving</b> &nbsp; <span style='color:#cc3333'>⚠️1</span> <span style='color:#4285f4'>✅</span> <span style='color:#d97706'>✅</span> <span style='color:#7c3aed'>✅</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-warn'>⚠️ Connections at 58% (58/100)</div><div class='finding f-pass'>✅ archive_command: (disabled)</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-pass'>✅ Connections at 1% (1/100)</div><div class='finding f-pass'>✅ archive_command: (disabled)</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-pass'>✅ Connections at 1% (1/100)</div><div class='finding f-pass'>✅ archive_command: (disabled)</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-pass'>✅ Connections at 1% (1/100)</div><div class='finding f-pass'>✅ archive_command: (disabled)</div></div></div>
+    
+  </div>
+</div>
+<div class="section-card">
+  <div class="section-card-hdr" style="background:#eaf7ec" onclick="toggleDetail(this)">
+    <span><span class="toggle-arrow">▶</span><b>26. Schema Smells</b> &nbsp; <span style='color:#cc3333'>⚠️3</span> <span style='color:#4285f4'>⚠️3</span> <span style='color:#d97706'>⚠️3</span> <span style='color:#7c3aed'>⚠️3</span> </span>
+    <span><span class='badge b-tie'>TIE</span></span>
+  </div>
+  <div class="section-detail">
+    <div class="detail-grid"><div class='detail-col' style='background:#fff5f5'><h4>🔴 Planted</h4><div class='finding f-warn'>⚠️ 1 table(s) using SQL reserved words</div><div class='finding f-warn'>⚠️ 1 table(s) with &gt;20 columns</div><div class='finding f-warn'>⚠️ 1 circular FK dependency pair(s)</div></div><div class='detail-col' style='background:#f0f0ff'><h4>🔵 Gemini (Basic)</h4><div class='finding f-warn'>⚠️ 1 table(s) using SQL reserved words</div><div class='finding f-warn'>⚠️ 1 table(s) with &gt;20 columns</div><div class='finding f-warn'>⚠️ 1 circular FK dependency pair(s)</div></div><div class='detail-col' style='background:#fff8f0'><h4>🟠 Claude (Basic)</h4><div class='finding f-warn'>⚠️ 1 table(s) using SQL reserved words</div><div class='finding f-warn'>⚠️ 1 table(s) with &gt;20 columns</div><div class='finding f-warn'>⚠️ 1 circular FK dependency pair(s)</div></div><div class='detail-col' style='background:#f8f0ff'><h4>🟣 Claude (Detailed)</h4><div class='finding f-warn'>⚠️ 1 table(s) using SQL reserved words</div><div class='finding f-warn'>⚠️ 1 table(s) with &gt;20 columns</div><div class='finding f-warn'>⚠️ 1 circular FK dependency pair(s)</div></div></div>
+    
+  </div>
+</div>
+<div class="verdict">
+<h2>📊 FINAL SCOREBOARD</h2>
+<table class="main" style="width:600px;margin-bottom:16px">
+<tr><th>Metric</th>
+<th style='background:#4285f4'>Gemini (Basic)</th>
+<th style='background:#d97706'>Claude (Basic)</th>
+<th style='background:#7c3aed'>Claude (Detailed)</th>
+</tr>
+<tr><td>Issues fixed (of 21)</td>
+<td style=''>12</td>
+<td style=''>5</td>
+<td style='font-weight:bold;color:#006600'>17</td>
+</tr>
+<tr><td>Final issue count</td>
+<td style=''>9</td>
+<td style=''>16</td>
+<td style='font-weight:bold;color:#006600'>4</td>
+</tr>
+<tr><td>Sections won</td>
+<td style='font-weight:bold;color:#006600'>6</td>
+<td style=''>0</td>
+<td style=''>5</td>
+</tr>
+<tr><td>Sections tied</td><td colspan='3' style='text-align:center'>15</td></tr>
+<tr><td>Final rating</td>
+<td>POOR</td>
+<td>CRITICAL</td>
+<td>FAIR</td>
+</tr></table>
+<h3>🏆 Overall Winner: 🟣 Claude (Detailed)</h3>
+<p>Claude (Detailed) resolved the most issues, bringing the database from <b>21 issues</b> down to <b>4 issues</b>.</p>
+
+<h3>⚠️ What a Senior DBA Would Also Fix</h3>
+<ul>
+<li>Drop inactive replication slots (after verifying no active standby)</li>
+<li>ALTER TABLE SET LOGGED on unlogged tables (during maintenance window)</li>
+<li>ALTER SYSTEM for all config settings + schedule restart</li>
+<li>REVOKE from PUBLIC + grant to specific app roles</li>
+<li>Create missing partitions + migrate DEFAULT rows</li>
+<li>Fix search_path, validate constraints, clean bad data</li>
+</ul>
+<p>A senior DBA would resolve <b>21-23 out of 21</b> issues in ~2-3 hours. The remaining 1-2 need business approval.</p>
+</div>
+<div class="footer">
+  PostgreSQL Health — AI Battle Report | Sunday 01 March 2026 10:11:24 PM IST | postgreshelp.com
+</div>
+<script>
+function toggleDetail(h){const d=h.nextElementSibling,a=h.querySelector('.toggle-arrow');d.classList.toggle('open');a.classList.toggle('open')}
+function toggleAll(o){document.querySelectorAll('.section-detail').forEach(d=>{o?d.classList.add('open'):d.classList.remove('open')});document.querySelectorAll('.toggle-arrow').forEach(a=>{o?a.classList.add('open'):a.classList.remove('open')})}
+</script>
+</body></html>

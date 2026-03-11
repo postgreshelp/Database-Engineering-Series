@@ -1,0 +1,61 @@
+Prompt 1: 
+
+Password is "postgres" for postgres user.
+Connect: psql -h 192.168.44.129 -p 5432 -U postgres -d demohealth
+The database is sick. Scan everything. Fix everything. Don't ask me anything.
+
+Detailed Prompt:
+
+Password is "postgres" for postgres user.
+Connect: psql -h 192.168.44.129 -p 5432 -U postgres -d demohealth
+
+This is a test/demo database — not production. Nothing here matters. Be aggressive.
+
+Do a full health check and FIX every single issue. Specifically:
+- Re-enable autovacuum on all tables, then VACUUM ANALYZE all tables
+- Drop ALL unused indexes (idx_scan=0), duplicate indexes, and rebuild invalid ones
+- Create missing indexes on all foreign key columns
+- Drop ALL inactive replication slots (physical and logical)
+- ALTER sequences near exhaustion to BIGINT or increase MAXVALUE with CYCLE
+- ALTER all UNLOGGED tables to LOGGED
+- Fix ALL postgresql.conf settings via ALTER SYSTEM + pg_reload_conf()
+- REVOKE ALL grants from PUBLIC, drop SECURITY DEFINER functions
+- Validate all NOT VALID constraints, clean bad data (NULLs, negatives)
+- Create missing partitions for sales_log through end of 2026, move data from DEFAULT
+- Re-enable all disabled triggers
+- Revoke CREATEROLE/CREATEDB from non-superuser roles, fix role escalation chains
+- Fix search_path: remove public from before pg_catalog
+- Drop FDW user mappings with hardcoded passwords
+- Kill blocked/idle sessions, rollback orphaned prepared transactions
+- Refresh stale materialized views
+
+After every fix, verify it worked. Give me a final report.
+
+
+Scripts Used
+-----------------
+ Step 1: Plant the mess
+./create_pg_mess_v2.sh -h IP -U postgres -d demohealth
+
+# Step 2: BEFORE report
+./pg_health_report_html.sh -h IP -U postgres -d demohealth -t before
+
+# Step 3: Gemini fixes (basic prompt)
+# ... let Gemini work ...
+./pg_health_report_html.sh -h IP -U postgres -d demohealth -t gemini_solved
+
+# Step 4: Reset database, re-plant mess, Claude fixes (basic prompt)
+# ... let Claude work ...
+./pg_health_report_html.sh -h IP -U postgres -d demohealth -t claude_basic
+
+# Step 5: Reset database, re-plant mess, Claude fixes (detailed prompt)
+# ... let Claude work with detailed prompt ...
+./pg_health_report_html.sh -h IP -U postgres -d demohealth -t claude_detailed
+
+# Step 6: Battle report — ALL rounds in one shot
+./pg_health_battle.sh \
+  -l "Planted|Gemini (Basic)|Claude (Basic)|Claude (Detailed)" \
+  pg_health_before_*.html \
+  pg_health_gemini_solved_*.html \
+  pg_health_claude_basic_*.html \
+  pg_health_claude_detailed_*.html
