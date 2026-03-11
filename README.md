@@ -81,11 +81,12 @@ This series maps that gap, episode by episode, responsibility by responsibility.
 ```
 Database-Engineering-Series/
 ├── README.md                          ← you are here
-├── ep01-dba-vs-ai/
-│   ├── README.md
-│   ├── prompts/
-│   ├── claude-responses/
-│   └── gemini-responses/
+├──ep01-dba-vs-ai/
+|   ├── output-files/        ← your "output files" folder
+|   ├── prompts/             ← your "prompts" folder  
+|   ├── scripts/             ← your "scripts" folder
+|   ├── conclusion_slides.pptx
+|   └── README.md            
 ├── ep02-dbre-vs-ai-mini-demo/
 │   ├── README.md
 │   ├── prompts/
