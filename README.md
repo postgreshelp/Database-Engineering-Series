@@ -40,7 +40,7 @@ This series maps that gap, episode by episode, responsibility by responsibility.
 
 > *"AI answers the question it was asked.*
 > *A DBRE answers the question behind the question.*
-> *A DBA answers from 14 years of being paged at 2 AM."*
+> *A DBA answers from 6 years of being paged at 2 AM."*
 
 ---
 
