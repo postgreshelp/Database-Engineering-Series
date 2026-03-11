@@ -79,7 +79,7 @@ This series maps that gap, episode by episode, responsibility by responsibility.
 ## Repository Structure
 
 ```
-postgresql-dbre-ai-series/
+Database-Engineering-Series/
 ├── README.md                          ← you are here
 ├── ep01-dba-vs-ai/
 │   ├── README.md
