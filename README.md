@@ -49,7 +49,7 @@ This series maps that gap, episode by episode, responsibility by responsibility.
 | Episode | Title | Area | Status |
 |---------|-------|------|--------|
 | Ep 01 | DBA vs AI | General Diagnosis — Who spots the problem first? | ✅ Live |
-| Ep 02 | DBA vs DBRE vs AI — Mini Demo | PostgreSQL 17 on AWS, 4 judgment calls | ✅ Live |
+| Ep 02 | DBA vs DBRE vs AI — Mini Demo | PostgreSQL 17 on AWS, 4 judgment calls | 🔒 Coming Soon |
 | Ep 03 | DBRE Area 1 — Infrastructure | VPC, Aurora, Secrets Manager, Terraform | 🔒 Coming Soon |
 | Ep 04 | DBRE Area 2 — HA Stack | PgBouncer, replication monitoring, backup validation | 🔒 Coming Soon |
 | Ep 05 | DBRE Area 3 — Observability | SLOs, CloudWatch alarms, dashboards | 🔒 Coming Soon |
@@ -68,10 +68,10 @@ This series maps that gap, episode by episode, responsibility by responsibility.
 
 | Episode | Edge Case | The Surprise |
 |---------|-----------|--------------|
-| Ep 11 | Synchronous replication isn't truly synchronous | Ctrl+C while waiting → commits on primary, standby never gets it |
-| Ep 12 | Crash recovery WAL deletion | Hours of startup time nobody warned you about |
-| Ep 13 | CREATE TABLE AS SELECT vs INSERT INTO SELECT | Different locks, different planner behavior, different production outcomes |
-| Ep 14 | Heap truncation after VACUUM | What it breaks that the docs don't mention |
+| Ep 11 | Synchronous replication isn't truly synchronous | *Stay tuned* |
+| Ep 12 | Crash recovery WAL deletion | *Stay tuned* |
+| Ep 13 | CREATE TABLE AS SELECT vs INSERT INTO SELECT | *Stay tuned* |
+| Ep 14 | Heap truncation after VACUUM | *Stay tuned* |
 | Ep 15+ | More from 6+ years of production | *Stay tuned* |
 
 ---
