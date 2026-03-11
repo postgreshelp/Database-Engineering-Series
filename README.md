@@ -1,4 +1,4 @@
-# PostgreSQL DBRE + AI Series
+# Database Engineering Series — DBA | DBRE | AI
 
 # ⚡ EVERYTHING IS OPEN SOURCE
 > Real PostgreSQL production problems. Real scripts. Real AI prompts. Real outputs.
@@ -9,13 +9,17 @@
 ## What Is This?
 
 This repository contains every script, prompt, log, explain plan, and AI output
-from the **"Can AI Replace a DBA?"** YouTube series by [postgreshelp.com](https://postgreshelp.com).
+from the **"Database Engineering Series — DBA | DBRE | AI"** on YouTube by [postgreshelp.com](https://postgreshelp.com).
 
-Each episode tests AI (Claude + Gemini) against a real DBRE responsibility area —
-benchmarked against the **GitLab DBRE Job Description**, one of the most respected
-and publicly available DBRE role definitions in the industry.
+Three roles. Real problems. Honest results.
 
-> 📋 Reference: [GitLab DBRE Job Description](https://handbook.gitlab.com/job-description-library/engineering/infrastructure/database-reliability-engineer/)
+- **DBA** — diagnoses and fixes with experience and instinct
+- **DBRE** — builds the automation, runbooks, and systems that prevent the problem
+- **AI** — works alongside both, tested honestly with real prompts and real outputs
+
+Episodes 1–2 put DBA and AI head to head.
+Episodes 3–10 show AI building a full DBRE stack, responsibility by responsibility.
+Episodes 11+ go deeper into production edge cases that no textbook covers.
 
 **14 years of PostgreSQL production experience. Tested against AI. Everything open source.**
 
@@ -33,16 +37,17 @@ in the DBA's head.
 This series maps that gap, episode by episode, responsibility by responsibility.
 
 > *"AI answers the question it was asked.*
-> *A DBRE answers the question behind the question."*
+> *A DBRE answers the question behind the question.*
+> *A DBA answers from 14 years of being paged at 2 AM."*
 
 ---
 
 ## Episode Index
 
-| Episode | Title | DBRE Area | Status |
-|---------|-------|-----------|--------|
-| Ep 01 | DBA vs AI | General Diagnosis | ✅ Live |
-| Ep 02 | DBRE vs AI — Mini Demo | PostgreSQL 17 on AWS, 4 judgment calls | ✅ Live |
+| Episode | Title | Area | Status |
+|---------|-------|------|--------|
+| Ep 01 | DBA vs AI | General Diagnosis — Who spots the problem first? | ✅ Live |
+| Ep 02 | DBA vs DBRE vs AI — Mini Demo | PostgreSQL 17 on AWS, 4 judgment calls | ✅ Live |
 | Ep 03 | DBRE Area 1 — Infrastructure | VPC, Aurora, Secrets Manager, Terraform | 🔒 Coming Soon |
 | Ep 04 | DBRE Area 2 — HA Stack | PgBouncer, replication monitoring, backup validation | 🔒 Coming Soon |
 | Ep 05 | DBRE Area 3 — Observability | SLOs, CloudWatch alarms, dashboards | 🔒 Coming Soon |
@@ -51,6 +56,21 @@ This series maps that gap, episode by episode, responsibility by responsibility.
 | Ep 08 | DBRE Area 6 — Migration Safety | migration_checker.py + CI/CD pipeline | 🔒 Coming Soon |
 | Ep 09 | DBRE Area 7 — Disaster Recovery | Cross-region backup + 6 runbooks | 🔒 Coming Soon |
 | Ep 10 | DBRE Area 8 — Security Audit | AI audits its own code with checkov + tfsec | 🔒 Coming Soon |
+
+
+**Ep 11 onwards — Production Edge Cases Arc** *(coming after Ep 10)*
+
+> These are not textbook problems. These are production-validated surprises —
+> things that look like they work, but don't. Or work in a way nobody expects.
+> Every episode in this arc comes from a real incident or lab finding.
+
+| Episode | Edge Case | The Surprise |
+|---------|-----------|--------------|
+| Ep 11 | Synchronous replication isn't truly synchronous | Ctrl+C while waiting → commits on primary, standby never gets it |
+| Ep 12 | Crash recovery WAL deletion | Hours of startup time nobody warned you about |
+| Ep 13 | CREATE TABLE AS SELECT vs INSERT INTO SELECT | Different locks, different planner behavior, different production outcomes |
+| Ep 14 | Heap truncation after VACUUM | What it breaks that the docs don't mention |
+| Ep 15+ | More from 14 years of production | *Stay tuned* |
 
 ---
 
@@ -158,3 +178,4 @@ The GitLab incident postmortem is required reading:
 **MIT** — Use it, fork it, share it, build on it.
 
 # ⚡ EVERYTHING IS OPEN SOURCE
+****
