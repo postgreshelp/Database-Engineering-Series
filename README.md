@@ -17,9 +17,11 @@ Three roles. Real problems. Honest results.
 - **DBRE** — builds the automation, runbooks, and systems that prevent the problem
 - **AI** — works alongside both, tested honestly with real prompts and real outputs
 
-Episodes 1–2 put DBA and AI head to head.
+```
+Episodes 1–2 put DBA, DBRE and AI head to head.
 Episodes 3–10 show AI building a full DBRE stack, responsibility by responsibility.
 Episodes 11+ go deeper into production edge cases that no textbook covers.
+```
 
 **14 years of PostgreSQL production experience. Tested against AI. Everything open source.**
 
