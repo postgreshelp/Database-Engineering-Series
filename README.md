@@ -23,7 +23,7 @@ Episodes 3–10 show AI building a full DBRE stack, responsibility by responsibi
 Episodes 11+ go deeper into production edge cases that no textbook covers.
 ```
 
-**14 years of PostgreSQL production experience. Tested against AI. Everything open source.**
+**6+ years of PostgreSQL production experience. Tested against AI. Everything open source.**
 
 ---
 
