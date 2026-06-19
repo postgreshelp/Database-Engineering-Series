@@ -290,8 +290,8 @@ scrape_configs:
 EOF
 
 # Validate rules before starting
-promtool check rules /etc/prometheus/alert_rules.yml
-promtool check config /etc/prometheus/prometheus.yml
+/usr/local/bin/promtool check rules /etc/prometheus/alert_rules.yml
+/usr/local/bin/promtool check config /etc/prometheus/prometheus.yml
 
 cat >/etc/systemd/system/prometheus.service <<EOF
 [Unit]
