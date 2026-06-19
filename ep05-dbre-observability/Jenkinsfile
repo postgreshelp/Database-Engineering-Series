@@ -1,0 +1,159 @@
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        ansiColor('xterm')
+        timeout(time: 15, unit: 'MINUTES')
+    }
+
+    parameters {
+        string(
+            name: 'TARGET_HOST',
+            defaultValue: '127.0.0.1',
+            description: 'IP of the server to deploy monitoring stack'
+        )
+        string(
+            name: 'ALERT_EMAIL',
+            defaultValue: 'kumarboina1t@gmail.com',
+            description: 'Email to send alerts to'
+        )
+        password(
+            name: 'SMTP_PASS',
+            defaultValue: '',
+            description: 'Gmail App Password (16 chars)'
+        )
+    }
+
+    stages {
+
+        stage('Pre-flight Check') {
+            steps {
+                echo '=== Checking environment ==='
+                sh '''
+                    echo "Target Host : ${TARGET_HOST}"
+                    echo "Alert Email : ${ALERT_EMAIL}"
+                    echo "Scripts     : monitoring.sh + cleanup.sh"
+                    ls -la monitoring.sh cleanup.sh
+                    echo "Pre-flight check passed"
+                '''
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                echo '=== Cleaning up existing monitoring stack ==='
+                sh '''
+                    chmod +x cleanup.sh
+                    bash cleanup.sh
+                    echo "Cleanup complete"
+                '''
+            }
+        }
+
+        stage('Deploy Monitoring Stack') {
+            steps {
+                echo '=== Deploying pg-dbre-stack ==='
+                sh '''
+                    chmod +x monitoring.sh
+
+                    # Inject SMTP password if provided
+                    if [ -n "${SMTP_PASS}" ]; then
+                        sed -i "s|YOUR_GMAIL_APP_PASSWORD_HERE|${SMTP_PASS}|g" monitoring.sh
+                    fi
+
+                    bash monitoring.sh
+                '''
+            }
+        }
+
+        stage('Verify Services') {
+            steps {
+                echo '=== Verifying all services ==='
+                sh '''
+                    echo "--- Service Status ---"
+                    for svc in node_exporter postgres_exporter alertmanager prometheus grafana-server; do
+                        STATUS=$(systemctl is-active $svc)
+                        if [ "$STATUS" = "active" ]; then
+                            echo "  ✔ $svc"
+                        else
+                            echo "  ✘ $svc FAILED"
+                            exit 1
+                        fi
+                    done
+
+                    echo ""
+                    echo "--- Endpoint Health ---"
+                    curl -sf http://${TARGET_HOST}:9090/-/healthy && echo "  ✔ Prometheus healthy"
+                    curl -sf http://${TARGET_HOST}:3000/api/health && echo "  ✔ Grafana healthy"
+                    curl -sf http://${TARGET_HOST}:9093/-/healthy && echo "  ✔ Alertmanager healthy"
+
+                    echo ""
+                    echo "--- PostgreSQL Metrics ---"
+                    PG_UP=$(curl -s http://${TARGET_HOST}:9187/metrics | grep "^pg_up" | awk '{print $2}')
+                    if [ "$PG_UP" = "1" ]; then
+                        echo "  ✔ pg_up = 1 (PostgreSQL reachable)"
+                    else
+                        echo "  ✘ pg_up = $PG_UP (PostgreSQL not reachable)"
+                        exit 1
+                    fi
+
+                    echo ""
+                    echo "--- Alert Rules ---"
+                    ALERT_COUNT=$(curl -s http://${TARGET_HOST}:9090/api/v1/rules | \
+                        python3 -c "import sys,json; d=json.load(sys.stdin); \
+                        print(sum(len(g['rules']) for g in d['data']['groups']))")
+                    echo "  ✔ Alert rules loaded: $ALERT_COUNT"
+
+                    echo ""
+                    echo "--- Grafana Dashboards ---"
+                    DASH_COUNT=$(curl -s http://admin:admin@${TARGET_HOST}:3000/api/search | \
+                        python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+                    echo "  ✔ Dashboards imported: $DASH_COUNT"
+                '''
+            }
+        }
+
+        stage('Health Report') {
+            steps {
+                echo '=== Final Health Report ==='
+                sh '''
+                    echo ""
+                    echo "=================================================="
+                    echo " pg-dbre-stack Deployed Successfully!"
+                    echo "--------------------------------------------------"
+                    echo " Grafana      → http://${TARGET_HOST}:3000"
+                    echo "               Login: admin / admin"
+                    echo " Prometheus   → http://${TARGET_HOST}:9090"
+                    echo " Alertmanager → http://${TARGET_HOST}:9093"
+                    echo " Node Exp.    → http://${TARGET_HOST}:9100/metrics"
+                    echo " PG Exp.      → http://${TARGET_HOST}:9187/metrics"
+                    echo "--------------------------------------------------"
+                    echo " Alerts:"
+                    echo "   • PostgresDown       (critical)"
+                    echo "   • TooManyConnections (warning)"
+                    echo "   • LongRunningQuery   (warning)"
+                    echo "   • ReplicationLag     (critical)"
+                    echo "   • HighCPU            (warning)"
+                    echo "   • LowDiskSpace       (critical)"
+                    echo "--------------------------------------------------"
+                    echo " DBRE Stack by Naresh Kumar Boina"
+                    echo " postgreshelp.com | labs.postgreshelp.com"
+                    echo "=================================================="
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✔ Pipeline succeeded! pg-dbre-stack is live."
+        }
+        failure {
+            echo "✘ Pipeline failed! Check stage logs above."
+        }
+        always {
+            echo "Pipeline completed at ${new Date()}"
+        }
+    }
+}
