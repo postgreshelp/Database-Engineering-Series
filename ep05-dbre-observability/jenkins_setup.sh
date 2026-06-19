@@ -87,8 +87,8 @@ else
 fi
 
 # Copy scripts to jenkins home so jenkins user can access them
-cp /root/monitoring.sh $MONITORING_SCRIPT
-cp /root/cleanup.sh $CLEANUP_SCRIPT
+cp /root/Database-Engineering-Series-main/ep05-dbre-observability/monitoring.sh $MONITORING_SCRIPT
+cp /root/Database-Engineering-Series-main/ep05-dbre-observability/cleanup.sh $CLEANUP_SCRIPT
 chmod +x $MONITORING_SCRIPT $CLEANUP_SCRIPT
 chown jenkins:jenkins $MONITORING_SCRIPT $CLEANUP_SCRIPT
 echo "  ✔ Scripts copied to $JENKINS_HOME"
