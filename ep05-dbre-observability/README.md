@@ -33,8 +33,8 @@ One command deploys a full DBRE observability stack:
 
 ### Step 1: Clone the repo
 ```bash
-git clone https://github.com/postgreshelp/pg-dbre-stack.git
-cd pg-dbre-stack
+git clone https://github.com/postgreshelp/ep05-dbre-observability.git
+cd ep05-dbre-observability
 ```
 
 ### Step 2: Configure your email
