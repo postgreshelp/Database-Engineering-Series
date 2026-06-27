@@ -60,11 +60,15 @@ Alertmanager → http://YOUR_IP:9093
 
 ## 📧 Gmail App Password Setup
 
-1. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
-2. 2FA must be enabled on your Google account
-3. Create app password → select **Mail**
-4. Copy the 16-character password
-5. Paste into `monitoring.sh` (no spaces)
+- Go to https://myaccount.google.com/apppasswords
+- Enable 2-Step Verification on your Google account (App Passwords won't appear without it).
+- Click Create App Password.
+    Select:
+    - App: Mail
+    - Device: Grafana (or choose Other (Custom name) and enter "Grafana")
+- Copy the generated 16-character App Password (remove any spaces if Google displays them grouped).
+- Paste it into your monitoring.sh or Grafana SMTP configuration as the SMTP password.
+- Restart Grafana after updating the configuration.
 
 ---
 
